@@ -1,0 +1,39 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+RWTexture2D<float4> _RenderTexture;
+float _Width, _Height;
+
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int alive = 0;
+
+    // top row
+    alive += _RenderTexture[id.xy + float2( 1, 1)].r;
+    alive += _RenderTexture[id.xy + float2( 0, 1)].r;
+    alive += _RenderTexture[id.xy + float2(-1, 1)].r;
+    // middle row (we dont count the cell itself)
+    alive += _RenderTexture[id.xy + float2( 1, 0)].r;
+    alive += _RenderTexture[id.xy + float2(-1, 0)].r;
+    // bottom row
+    alive += _RenderTexture[id.xy + float2( 1, -1)].r;
+    alive += _RenderTexture[id.xy + float2( 0, -1)].r;
+    alive += _RenderTexture[id.xy + float2(-1, -1)].r;
+
+
+    // any dead cell with three neighbors becomes alive
+    if (_RenderTexture[id.xy].r <= 0.5 && alive == 3) {
+        _RenderTexture[id.xy] = float4(1, 1, 1, 1);
+    } // any live cell with 2 or 3 neighbors stays alive
+    else if (_RenderTexture[id.xy].r > 0.5 && alive > 1 && alive < 4) {
+        _RenderTexture[id.xy] = float4(1, 1, 1, 1);
+    } // any other cell dies
+    else{
+        _RenderTexture[id.xy] = float4(0, 0, 0, 0);
+    }
+}
