@@ -11,48 +11,63 @@ public class GameOfLifeScript : MonoBehaviour
 
     private ComputeShader computeShader;
 
-    private RenderTexture renderTexture;
+    private RenderTexture outputTexture;
+    private RenderTexture inputTexture;
     private int width;
     private int height;
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
         if (Time.frameCount % framesPerIteration == 0) {
+            //GetComponent<Screencapture>().SaveScreenshot();
             Render(destination);
         }
     }
 
     private void Render(RenderTexture destination) {
-        InitializeRenderTexture();
+        InitializeRenderTextures();
         LoadComputeShader();
 
-        computeShader.SetTexture(0, "_RenderTexture", renderTexture);
+        computeShader.SetTexture(0, "_InputTexture", inputTexture);
+        computeShader.SetTexture(0, "_OutputTexture", outputTexture);
         computeShader.SetFloat("_Width", width);
         computeShader.SetFloat("_Height", height);
         int threadGroupsX = Mathf.CeilToInt(width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(height / 8.0f);
         computeShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
 
-        Graphics.Blit(renderTexture, destination);
+        Graphics.Blit(outputTexture, destination);
+        Graphics.Blit(outputTexture, inputTexture);
     }
 
-    private void InitializeRenderTexture() {
-        if (renderTexture == null || renderTexture.width != width || renderTexture.height != height) {
+    private void InitializeRenderTextures() {
+        if (inputTexture == null || inputTexture.width != width || inputTexture.height != height) {
 
             //Texture2D initialTexture = LoadPNG(initialImagePath);
             width = initialTexture.width;
             height = initialTexture.height;
 
             // Release render texture if we already have one
-            if (renderTexture != null)
-                renderTexture.Release();
+            if (inputTexture != null) {
+                inputTexture.Release();
+            }
             // Get a render target
-            renderTexture = new RenderTexture(width, height, 0,
+            inputTexture = new RenderTexture(width, height, 0,
                 RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            renderTexture.enableRandomWrite = true;
-            renderTexture.Create();
+            inputTexture.enableRandomWrite = true;
+            inputTexture.Create();
+
+            // Release render texture if we already have one
+            if (outputTexture != null) {
+                outputTexture.Release();
+            }
+            // Get a render target
+            outputTexture = new RenderTexture(width, height, 0,
+                RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            outputTexture.enableRandomWrite = true;
+            outputTexture.Create();
 
             // copy loaded image to graphics card
-            Graphics.Blit(initialTexture, renderTexture);
+            Graphics.Blit(initialTexture, inputTexture);
         }
     }
 

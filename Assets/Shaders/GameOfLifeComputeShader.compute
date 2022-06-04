@@ -4,36 +4,91 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 
-RWTexture2D<float4> _RenderTexture;
+RWTexture2D<float4> _InputTexture;
+RWTexture2D<float4> _OutputTexture;
 float _Width, _Height;
 
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    int alive = 0;
+    float red, green, blue;
 
+    // RED CHANNEL
+    float redNeighbors = 0;
     // top row
-    alive += _RenderTexture[id.xy + float2( 1, 1)].r;
-    alive += _RenderTexture[id.xy + float2( 0, 1)].r;
-    alive += _RenderTexture[id.xy + float2(-1, 1)].r;
+    redNeighbors += _InputTexture[id.xy + float2( 1, 1)].r;
+    redNeighbors += _InputTexture[id.xy + float2( 0, 1)].r;
+    redNeighbors += _InputTexture[id.xy + float2(-1, 1)].r;
     // middle row (we dont count the cell itself)
-    alive += _RenderTexture[id.xy + float2( 1, 0)].r;
-    alive += _RenderTexture[id.xy + float2(-1, 0)].r;
+    redNeighbors += _InputTexture[id.xy + float2( 1, 0)].r;
+    redNeighbors += _InputTexture[id.xy + float2(-1, 0)].r;
     // bottom row
-    alive += _RenderTexture[id.xy + float2( 1, -1)].r;
-    alive += _RenderTexture[id.xy + float2( 0, -1)].r;
-    alive += _RenderTexture[id.xy + float2(-1, -1)].r;
-
+    redNeighbors += _InputTexture[id.xy + float2( 1, -1)].r;
+    redNeighbors += _InputTexture[id.xy + float2( 0, -1)].r;
+    redNeighbors += _InputTexture[id.xy + float2(-1, -1)].r;
 
     // any dead cell with three neighbors becomes alive
-    if (_RenderTexture[id.xy].r <= 0.5 && alive == 3) {
-        _RenderTexture[id.xy] = float4(1, 1, 1, 1);
+    if (_InputTexture[id.xy].r <= 0.5 && redNeighbors > 2.5 && redNeighbors < 3.5) {
+        red = 1;
     } // any live cell with 2 or 3 neighbors stays alive
-    else if (_RenderTexture[id.xy].r > 0.5 && alive > 1 && alive < 4) {
-        _RenderTexture[id.xy] = float4(1, 1, 1, 1);
+    else if (_InputTexture[id.xy].r > 0.5 && redNeighbors > 1 && redNeighbors < 4) {
+        red = 1;
     } // any other cell dies
-    else{
-        _RenderTexture[id.xy] = float4(0, 0, 0, 0);
+    else {
+        red = 0;
     }
+    
+    // GREEN CHANNEL
+    float greenNeighbors = 0;
+    // top row
+    greenNeighbors += _InputTexture[id.xy + float2( 1, 1)].g;
+    greenNeighbors += _InputTexture[id.xy + float2( 0, 1)].g;
+    greenNeighbors += _InputTexture[id.xy + float2(-1, 1)].g;
+    // middle row (we dont count the cell itself)
+    greenNeighbors += _InputTexture[id.xy + float2( 1, 0)].g;
+    greenNeighbors += _InputTexture[id.xy + float2(-1, 0)].g;
+    // bottom row
+    greenNeighbors += _InputTexture[id.xy + float2( 1, -1)].g;
+    greenNeighbors += _InputTexture[id.xy + float2( 0, -1)].g;
+    greenNeighbors += _InputTexture[id.xy + float2(-1, -1)].g;
+
+    // any dead cell with three neighbors becomes alive
+    if (_InputTexture[id.xy].g <= 0.5 && greenNeighbors > 2.5 && greenNeighbors < 3.5) {
+        green = 1;
+    } // any live cell with 2 or 3 neighbors stays alive
+    else if (_InputTexture[id.xy].g > 0.5 && greenNeighbors > 1 && greenNeighbors < 4) {
+        green = 1;
+    } // any other cell dies
+    else {
+        green = 0;
+    }
+    
+    // BLUE CHANNEL
+    float blueNeighbors = 0;
+    // top row
+    blueNeighbors += _InputTexture[id.xy + float2( 1, 1)].b;
+    blueNeighbors += _InputTexture[id.xy + float2( 0, 1)].b;
+    blueNeighbors += _InputTexture[id.xy + float2(-1, 1)].b;
+    // middle row (we dont count the cell itself)
+    blueNeighbors += _InputTexture[id.xy + float2( 1, 0)].b;
+    blueNeighbors += _InputTexture[id.xy + float2(-1, 0)].b;
+    // bottom row
+    blueNeighbors += _InputTexture[id.xy + float2( 1, -1)].b;
+    blueNeighbors += _InputTexture[id.xy + float2( 0, -1)].b;
+    blueNeighbors += _InputTexture[id.xy + float2(-1, -1)].b;
+
+    // any dead cell with three neighbors becomes alive
+    if (_InputTexture[id.xy].b <= 0.5 && blueNeighbors > 2.5 && blueNeighbors < 3.5) {
+        blue = 1;
+    } // any live cell with 2 or 3 neighbors stays alive
+    else if (_InputTexture[id.xy].b > 0.5 && blueNeighbors > 1 && blueNeighbors < 4) {
+        blue = 1;
+    } // any other cell dies
+    else {
+        blue = 0;
+    }
+
+    // write pixel value
+    _OutputTexture[id.xy] = float4(red, green, blue, 1);
 }
